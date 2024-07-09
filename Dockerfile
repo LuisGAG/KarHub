@@ -1,5 +1,5 @@
-# Use uma imagem base do Python
-FROM python:3.9.9-slim
+# Use uma imagem base do Python com Airflow
+FROM apache/airflow:2.7.0-python3.9
 
 # Defina um diretório de trabalho
 WORKDIR /app
@@ -11,11 +11,17 @@ COPY gdvDespesasExcel.csv /app/gdvDespesasExcel.csv
 COPY gdvReceitasExcel.csv /app/gdvReceitasExcel.csv
 COPY service-account-file.json /app/service-account-file.json
 
-# Instale as dependências
+# Instale as dependências adicionais
 RUN pip install pandas requests pandas-gbq google-cloud-bigquery
 
 # Defina a variável de ambiente para o caminho do arquivo de credenciais JSON
 ENV GOOGLE_APPLICATION_CREDENTIALS="/app/service-account-file.json"
 
-# Defina o comando para rodar o script
-CMD ["python", "ETL_SP_Rec_Orc.py"]
+# Copie o arquivo de configuração do Airflow
+COPY airflow.cfg /root/airflow/airflow.cfg
+
+# Copie o DAG para o diretório de DAGs do Airflow
+COPY etl_dag.py /opt/airflow/dags/etl_dag.py
+
+# Defina o comando para rodar o Airflow
+CMD ["airflow", "webserver", "--daemon"]

@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  airflow-webserver:
+    image: apache/airflow:2.7.0-python3.9
+    container_name: airflow-webserver
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-file.json
+    volumes:
+      - ./airflow.cfg:/root/airflow/airflow.cfg
+      - ./gdvDespesasExcel.csv:/app/gdvDespesasExcel.csv
+      - ./gdvReceitasExcel.csv:/app/gdvReceitasExcel.csv
+      - ./service-account-file.json:/app/service-account-file.json
+      - ./data_handler.py:/app/data_handler.py
+      - ./ETL_SP_Rec_Orc.py:/app/ETL_SP_Rec_Orc.py
+      - ./etl_dag.py:/opt/airflow/dags/etl_dag.py
+    ports:
+      - "8080:8080"
+    command: ["airflow", "webserver", "--daemon"]
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.0-python3.9
+    container_name: airflow-scheduler
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-file.json
+    volumes:
+      - ./airflow.cfg:/root/airflow/airflow.cfg
+      - ./gdvDespesasExcel.csv:/app/gdvDespesasExcel.csv
+      - ./gdvReceitasExcel.csv:/app/gdvReceitasExcel.csv
+      - ./service-account-file.json:/app/service-account-file.json
+      - ./data_handler.py:/app/data_handler.py
+      - ./ETL_SP_Rec_Orc.py:/app/ETL_SP_Rec_Orc.py
+      - ./etl_dag.py:/opt/airflow/dags/etl_dag.py
+    depends_on:
+      - airflow-webserver
+    command: ["airflow", "scheduler"]
+
+  airflow-init:
+    image: apache/airflow:2.7.0-python3.9
+    container_name: airflow-init
+    environment:
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+    volumes:
+      - ./airflow.cfg:/root/airflow/airflow.cfg
+      - ./gdvDespesasExcel.csv:/app/gdvDespesasExcel.csv
+      - ./gdvReceitasExcel.csv:/app/gdvReceitasExcel.csv
+      - ./service-account-file.json:/app/service-account-file.json
+      - ./data_handler.py:/app/data_handler.py
+      - ./ETL_SP_Rec_Orc.py:/app/ETL_SP_Rec_Orc.py
+      - ./etl_dag.py:/opt/airflow/dags/etl_dag.py
+    command: ["airflow", "db", "init"]
